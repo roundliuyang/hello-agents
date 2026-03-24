@@ -100,4 +100,88 @@ async def discover_tools():
                         print(f"  - {param_name} ({param_type}): {param_desc}")
 
 
-asyncio.run(discover_tools())
+# asyncio.run(discover_tools())
+
+
+# 调用工具
+async def use_tools():
+    client = MCPClient(["npx", "-y", "@modelcontextprotocol/server-filesystem", "."])
+
+    async with client:
+        # 读取文件
+        result = await client.call_tool("read_file", {"path": "my_README.md"})
+        print(f"文件内容：\n{result}")
+
+        # 列出目录
+        result = await client.call_tool("list_directory", {"path": "."})
+        print(f"当前目录文件：{result}")
+
+        # 写入文件
+        result = await client.call_tool("write_file", {
+            "path": "output.txt",
+            "content": "Hello from MCP!"
+        })
+        print(f"写入结果：{result}")
+
+
+# asyncio.run(use_tools())
+
+
+# 在这里提供一种更为安全的方式来调用 MCP 服务，可供参考
+async def safe_tool_call():
+    client = MCPClient(["npx", "-y", "@modelcontextprotocol/server-filesystem", "."])
+
+    async with client:
+        try:
+            # 尝试读取可能不存在的文件
+            result = await client.call_tool("read_file", {"path": "nonexistent.txt"})
+            print(result)
+        except Exception as e:
+            print(f"工具调用失败: {e}")
+            # 可以选择重试、使用默认值或向用户报告错误
+
+
+# asyncio.run(safe_tool_call())
+
+
+# 访问资源 - 使用支持 Resources 的 MCP 服务器
+async def access_resources():
+    pass
+
+
+# asyncio.run(access_resources())
+
+
+# 完整示例：使用 GitHub MCP 服务
+"""
+GitHub MCP 服务示例
+
+注意：需要设置环境变量
+    Windows: $env:GITHUB_PERSONAL_ACCESS_TOKEN="your_token_here"
+    Linux/macOS: export GITHUB_PERSONAL_ACCESS_TOKEN="your_token_here"
+"""
+
+from hello_agents.tools import MCPTool
+
+# 创建 GitHub MCP 工具
+github_tool = MCPTool(
+    server_command=["npx", "-y", "@modelcontextprotocol/server-github"]
+)
+
+# 1. 列出可用工具
+print("📋 可用工具：")
+result = github_tool.run({"action": "list_tools"})
+print(result)
+
+# 2. 搜索仓库
+print("\n🔍 搜索仓库：")
+result = github_tool.run({
+    "action": "call_tool",
+    "tool_name": "search_repositories",
+    "arguments": {
+        "query": "AI agents language:python",
+        "page": 1,
+        "perPage": 3
+    }
+})
+print(result)
