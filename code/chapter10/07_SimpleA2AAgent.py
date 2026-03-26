@@ -1,5 +1,6 @@
 from hello_agents.protocols.a2a.implementation import A2AServer, A2A_AVAILABLE
 
+
 def create_calculator_agent():
     """创建一个计算器智能体"""
     if not A2A_AVAILABLE:
@@ -10,16 +11,31 @@ def create_calculator_agent():
 
     # 创建 A2A 服务器
     calculator = A2AServer(
-        name="calculator-agent",
-        description="专业的数学计算智能体",
+        name="calculator-agent",  # 智能体的唯一标识名称
+        description="专业的数学计算智能体",  # 智能体的功能描述
         version="1.0.0",
-        capabilities={
+        capabilities={  # 能力声明，告诉其他智能体它能做什么
             "math": ["addition", "subtraction", "multiplication", "division"],
             "advanced": ["power", "sqrt", "factorial"]
         }
     )
 
-    # 添加基础计算技能
+    # 工作原理：
+    # 1.@calculator.skill("add") 是装饰器语法
+    # 2.它把下面的 add_numbers 函数注册为智能体的一个技能
+    # 3.技能的名称是 "add"
+    # 4.注册后，可以通过 calculator.skills["add"] 来调用这个函数
+    # 作用：
+    # - 声明式注册：告诉 A2AServer，这个函数是智能体的一个技能
+    # - 技能映射：将函数 add_numbers 映射到技能名 "add"
+    # - 能力暴露：其他智能体可以通过 A2A 协议发现和调用这个技能
+    # 注册后，智能体的 skills 字典中会包含：
+    # calculator.skills = {
+    #     "add": <add_numbers 函数>,
+    #     "multiply": <multiply_numbers 函数>,
+    #     "info": <get_info 函数>
+    # }
+    # 可以通过技能名调用 result = calculator.skills["add"]("计算 5 + 3")
     @calculator.skill("add")
     def add_numbers(query: str) -> str:
         """加法计算"""
@@ -58,6 +74,7 @@ def create_calculator_agent():
 
     print(f"✅ 计算器智能体创建成功，支持技能: {list(calculator.skills.keys())}")
     return calculator
+
 
 # 创建智能体
 calc_agent = create_calculator_agent()

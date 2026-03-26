@@ -14,6 +14,7 @@ researcher = A2AServer(
     version="1.0.0"
 )
 
+
 # 定义技能
 @researcher.skill("research")
 def handle_research(text: str) -> str:
@@ -21,7 +22,7 @@ def handle_research(text: str) -> str:
     import re
     match = re.search(r'research\s+(.+)', text, re.IGNORECASE)
     topic = match.group(1).strip() if match else text
-    
+
     # 实际的研究逻辑（这里简化）
     result = {
         "topic": topic,
@@ -30,20 +31,23 @@ def handle_research(text: str) -> str:
     }
     return str(result)
 
+
 # 在后台启动服务
 def start_server():
     researcher.run(host="localhost", port=5000)
 
+
 if __name__ == "__main__":
+    # target 参数指定线程要执行的函数
+    # daemon 参数指定线程是否为守护线程，默认为 False
     server_thread = threading.Thread(target=start_server, daemon=True)
     server_thread.start()
-    
+
     print("✅ 研究员Agent服务已启动在 http://localhost:5000")
-    
+
     # 保持程序运行
     try:
         while True:
             time.sleep(1)
     except KeyboardInterrupt:
         print("\n服务已停止")
-
