@@ -10,7 +10,7 @@ load_dotenv()
 
 def create_weather_assistant():
     """创建天气助手"""
-    llm = HelloAgentsLLM()
+    llm = HelloAgentsLLM(base_url="https://api.chatanywhere.tech/v1")
 
     assistant = SimpleAgent(
         name="天气助手",
@@ -20,9 +20,25 @@ def create_weather_assistant():
 """
     )
 
-    # 添加天气 MCP 工具
+    # 为什么能找到 weather_tool 中的 get_weather？
+    # 因为 MCPTool 在初始化时会自动：
+    # 1.连接 MCP 服务器（weather_server）
+    # 2.列出所有可用工具（通过 list_tools()）
+    # 3.保存工具列表（self._available_tools）
+    # 4.展开为独立工具（get_expanded_tools()）
+    # 5.注册到 Agent（add_tool() 时自动完成）
+    # 6.最终，get_weather 作为一个独立的工具被注册到 assistant 的工具注册表中，LLM 就能识别并调用它了。
+    # ✅ 连接成功！
+    # ✅ 工具 'mcp_get_weather' 已注册。
+    # ✅ 工具 'mcp_list_supported_cities' 已注册。
+    # ✅ 工具 'mcp_get_server_info' 已注册。
+    # ✅ MCP工具 'mcp' 已展开为 3 个独立工具
+
+    # 获取天气服务器脚本的路径
     server_script = os.path.join(os.path.dirname(__file__), "14_weather_mcp_server.py")
+    # 创建 MCP 工具，启动天气服务器进程
     weather_tool = MCPTool(server_command=["python", server_script])
+    # 将天气工具添加到助手智能体中
     assistant.add_tool(weather_tool)
 
     return assistant
@@ -51,8 +67,8 @@ def interactive():
 
 if __name__ == "__main__":
     import sys
+
     if len(sys.argv) > 1 and sys.argv[1] == "demo":
         demo()
     else:
         interactive()
-
