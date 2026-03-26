@@ -50,3 +50,4 @@ network.connect_nodes("nlp_agent_1", "nlp_agent_2")
 
 stats = network.get_network_stats()
 print(f"✅ 网络构建完成，共 {stats['total_nodes']} 个节点")
+print(f"📊 网络连接数：{stats.get('total_connections', 0)}")

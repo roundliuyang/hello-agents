@@ -5,7 +5,7 @@ import random
 from dotenv import load_dotenv
 
 load_dotenv()
-llm = HelloAgentsLLM()
+llm = HelloAgentsLLM(base_url="https://api.chatanywhere.tech/v1")
 
 # 1. 创建服务发现中心
 discovery = ANPDiscovery()
@@ -45,13 +45,18 @@ scheduler = SimpleAgent(
 - 获取网络统计：{"action": "get_stats"}"""
 )
 
-# 添加ANP工具
+# - 创建一个 ANP 协议的工具包装器
+# - 将服务发现中心（discovery）封装成智能体可以使用的工具
+# - 工具名为 service_discovery，智能体可以通过这个名字调用它
 anp_tool = ANPTool(
-    name="service_discovery",
+    name="service_discovery",  # 工具名称：服务发现
     description="服务发现工具，可以查找和选择计算节点",
     discovery=discovery
 )
+
+# 把 service_discovery 工具安装到任务调度器智能体中，调度器现在可以查询可用的计算节点并做出选择
 scheduler.add_tool(anp_tool)
+
 
 # 4. 智能任务分配
 def assign_task(task_description):
@@ -75,7 +80,8 @@ def assign_task(task_description):
     print(response)
     print("=" * 50)
 
+
 # 测试不同类型的任务
 assign_task("训练一个大型深度学习模型，需要GPU支持")
-assign_task("处理大量文本数据，需要高内存")
-assign_task("运行轻量级数据分析任务")
+# assign_task("处理大量文本数据，需要高内存")
+# assign_task("运行轻量级数据分析任务")
