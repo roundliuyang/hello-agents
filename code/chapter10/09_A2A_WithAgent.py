@@ -131,7 +131,7 @@ print("🤖 创建接待员 SimpleAgent")
 print("="*60)
 
 # 初始化 LLM
-llm = HelloAgentsLLM()
+llm = HelloAgentsLLM(base_url="https://api.chatanywhere.tech/v1")
 
 # 创建接待员 Agent
 receptionist = SimpleAgent(
