@@ -1,27 +1,31 @@
+# 构建系统配置 - 指定使用 setuptools 和 wheel 作为构建后端
 [build-system]
-requires = ["setuptools>=61.0", "wheel"]
-build-backend = "setuptools.build_meta"
+requires = ["setuptools>=61.0", "wheel"]   # 构建依赖：setuptools 61.0 以上版本和 wheel
+build-backend = "setuptools.build_meta"    # 构建后端接口
 
+# 项目元数据配置
 [project]
-name = "weather-mcp-server"
-version = "1.0.0"
-description = "Real-time weather query MCP server based on HelloAgents framework"
+name = "weather-mcp-server"  # 项目名称
+version = "1.0.0"    # 版本号
+description = "Real-time weather query MCP server based on HelloAgents framework"  # 项目描述：基于 HelloAgents 框架的实时天气查询 MCP 服务器
 readme = "README.md"
 license = {text = "MIT"}
-authors = [
+authors = [  # 作者信息列表
     {name = "HelloAgents Team", email = "jjyaoao@126.com"}
 ]
-requires-python = ">=3.10"
+requires-python = ">=3.10"   # Python 最低版本要求
 dependencies = [
     "hello-agents>=0.2.2",
     "requests>=2.31.0",
 ]
 
+# 项目相关链接配置
 [project.urls]
-Homepage = "https://github.com/yourusername/weather-mcp-server"
-Repository = "https://github.com/yourusername/weather-mcp-server"
-"Bug Tracker" = "https://github.com/yourusername/weather-mcp-server/issues"
+Homepage = "https://github.com/yourusername/weather-mcp-server"   # 项目主页
+Repository = "https://github.com/yourusername/weather-mcp-server" # Git 代码仓库地址
+"Bug Tracker" = "https://github.com/yourusername/weather-mcp-server/issues"  # 问题反馈追踪地址
 
+# Setuptools 打包工具配置
 [tool.setuptools]
-py-modules = ["server"]
+py-modules = ["server"]  # 指定要打包的 Python 模块（包含 server.py）
 
