@@ -18,7 +18,7 @@ def search(query: str) -> str:
             return "错误：SERPAPI_API_KEY 未在 .env 文件中配置。"
 
         params = {
-            "engine": "google",
+            "engine": "bing",
             "q": query,
             "api_key": api_key,
             "gl": "cn",  # 国家代码

@@ -59,7 +59,8 @@ class ReActAgent:
             
             tool_name, tool_input = self._parse_action(action)
             if not tool_name or not tool_input:
-                self.history.append("Observation: 无效的Action格式，请检查。"); continue
+                self.history.append("Observation: 无效的Action格式，请检查。")
+                continue   # 这步很重要，如果模型没有按提示词回复，则跳过（重试）
 
             print(f"🎬 行动: {tool_name}[{tool_input}]")
             tool_function = self.tool_executor.getTool(tool_name)
