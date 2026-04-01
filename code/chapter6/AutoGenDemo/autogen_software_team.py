@@ -4,7 +4,7 @@ AutoGen 软件开发团队协作案例
 
 import os
 import asyncio
-from typing import List, Dict, Any
+# from typing import List, Dict, Any
 from dotenv import load_dotenv
 
 # 加载环境变量
