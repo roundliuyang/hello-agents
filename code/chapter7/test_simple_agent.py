@@ -1,4 +1,6 @@
 # test_simple_agent.py
+import os
+
 from dotenv import load_dotenv
 from hello_agents import HelloAgentsLLM, ToolRegistry
 from hello_agents.tools import CalculatorTool
@@ -7,8 +9,12 @@ from my_simple_agent import MySimpleAgent
 # 加载环境变量
 load_dotenv()
 
-# 创建LLM实例
-llm = HelloAgentsLLM()
+# 创建 LLM 实例
+llm = HelloAgentsLLM(
+    provider="modelscope",
+    model="Qwen/Qwen3.5-35B-A3B",  # ModelScope 完整路径
+    api_key=os.getenv("MODELSCOPE_API_KEY")
+)
 
 # 测试1：基础对话Agent（无工具）
 print("=== 测试1：基础对话 ===")
