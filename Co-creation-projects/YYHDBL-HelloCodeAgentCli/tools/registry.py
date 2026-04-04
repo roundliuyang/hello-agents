@@ -189,6 +189,7 @@ class ToolRegistry:
 
         Returns:
             工具描述字符串，用于构建提示词
+            返回示例: - advanced_search: 高级搜索工具，整合Tavily和SerpAPI多个搜索源，提供更全面的搜索结果
         """
         descriptions = []
 

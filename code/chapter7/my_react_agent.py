@@ -108,6 +108,11 @@ class MyReActAgent(ReActAgent):
             messages = [{"role": "user", "content": prompt}]
 
             # 2. 调用LLM
+            """
+            response_text 示例：
+            Thought: 这是一个简单的数学计算问题，需要计算 (25 + 15) * 3 - 8 的结果。我可以使用calculate工具来进行这个数学计算。根据运算优先级，先计算括号内的加法，再乘法，最后减法。
+            Action: calculate[(25 + 15) * 3 - 8]
+            """
             response_text = self.llm.invoke(messages, **kwargs)
 
             # 3. 解析输出
@@ -115,6 +120,7 @@ class MyReActAgent(ReActAgent):
 
             # 4. 检查完成条件
             if action and action.startswith("Finish"):
+                # 如 action: Finish[112]
                 final_answer = self._parse_action_input(action)
                 self.add_message(Message(input_text, "user"))
                 self.add_message(Message(final_answer, "assistant"))
@@ -122,9 +128,12 @@ class MyReActAgent(ReActAgent):
 
             # 5. 执行工具调用
             if action:
+                # tool_name: calculate  tool_input: (25 + 15) * 3 - 8
                 tool_name, tool_input = self._parse_action(action)
+                # observation: 112
                 observation = self.tool_registry.execute_tool(tool_name, tool_input)
                 self.current_history.append(f"Action: {action}")
+                # 添加到历史记录,current_history:['Action: calculate[(25 + 15) * 3 - 8]', 'Observation: 112']
                 self.current_history.append(f"Observation: {observation}")
 
         # 达到最大步数

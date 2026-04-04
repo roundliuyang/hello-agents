@@ -1,4 +1,6 @@
 # test_my_calculator.py
+import os
+
 from dotenv import load_dotenv
 from my_calculator_tool import create_calculator_registry
 
@@ -32,7 +34,11 @@ def test_with_simple_agent():
     from hello_agents import HelloAgentsLLM
 
     # 创建LLM客户端
-    llm = HelloAgentsLLM()
+    llm = HelloAgentsLLM(
+        provider="modelscope",
+        model="Qwen/Qwen3.5-35B-A3B",  # ModelScope 完整路径
+        api_key=os.getenv("MODELSCOPE_API_KEY")
+    )
 
     # 创建包含计算器的注册表
     registry = create_calculator_registry()

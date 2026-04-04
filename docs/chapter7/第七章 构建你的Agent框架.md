@@ -1656,10 +1656,10 @@ if __name__ == "__main__":
 
 通过这个简化的数学计算工具案例，我们学会了如何快速开发自定义工具：编写一个简单的计算函数，通过ToolRegistry注册，然后与SimpleAgent集成使用。为了更直观的观察，这里提供了图7.1，可以清晰理解代码的运行逻辑。
 
-<div align="center">
-  <img src="https://raw.githubusercontent.com/datawhalechina/Hello-Agents/main/docs/images/7-figures/01.png" alt="" width="90%"/>
-  <p>图 7.1 基于Helloagents的SimpleAgent运行工作流</p>
-</div>
+![img](第七章 构建你的Agent框架.assets/01.png)
+
+​																		*图 7.1 基于Helloagents的SimpleAgent运行工作流*
+
 
 ### 7.5.3 多源搜索工具
 

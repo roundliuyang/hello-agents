@@ -18,7 +18,8 @@ class Tool(ABC):
     def __init__(self, name: str, description: str):
         self.name = name
         self.description = description
-    
+
+    # 这个设计体现了面向对象设计的核心思想：通过统一的`run`方法接口，所有工具都能以一致的方式执行，接受字典参数并返回字符串结果，确保了框架的一致性
     @abstractmethod
     def run(self, parameters: Dict[str, Any]) -> str:
         """执行工具"""
