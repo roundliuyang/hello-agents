@@ -24,7 +24,7 @@ class ToolChain:
         step = {
             "tool_name": tool_name,
             "input_template": input_template,
-            "output_key": output_key or f"step_{len(self.steps)}_result"
+            "output_key": output_key or f"step_{len(self.steps)}_result"   # 如果 output_key 有值（非空字符串/非 None），就使用它，否则自动生成默认名称：step_0_result、step_1_result...
         }
         self.steps.append(step)
         print(f"✅ 工具链 '{self.name}' 添加步骤: {tool_name}")
