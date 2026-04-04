@@ -1,4 +1,6 @@
 # test_react_agent.py
+import os
+
 from dotenv import load_dotenv
 from hello_agents import HelloAgentsLLM, ToolRegistry
 from my_react_agent import MyReActAgent
@@ -10,7 +12,11 @@ def test_react_agent():
     """测试MyReActAgent的功能"""
     
     # 创建LLM实例
-    llm = HelloAgentsLLM()
+    llm = HelloAgentsLLM(
+        provider="modelscope",
+        model="Qwen/Qwen3.5-35B-A3B",  # ModelScope 完整路径
+        api_key=os.getenv("MODELSCOPE_API_KEY")
+    )
     
     # 创建工具注册表
     tool_registry = ToolRegistry()
@@ -142,6 +148,6 @@ if __name__ == "__main__":
     test_react_agent()
     
     # 运行自定义提示词测试
-    test_custom_prompt()
+    # test_custom_prompt()
     
     print("\n✨ 所有测试完成！")

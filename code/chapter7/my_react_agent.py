@@ -30,21 +30,34 @@ import re
 from typing import Optional, List, Tuple
 from hello_agents import ReActAgent, HelloAgentsLLM, Config, Message, ToolRegistry
 
+
 class MyReActAgent(ReActAgent):
     """
     重写的ReAct Agent - 推理与行动结合的智能体
     """
 
     def __init__(
-        self,
-        name: str,
-        llm: HelloAgentsLLM,
-        tool_registry: ToolRegistry,
-        system_prompt: Optional[str] = None,
-        config: Optional[Config] = None,
-        max_steps: int = 5,
-        custom_prompt: Optional[str] = None
+            self,
+            name: str,
+            llm: HelloAgentsLLM,
+            tool_registry: ToolRegistry,
+            system_prompt: Optional[str] = None,
+            config: Optional[Config] = None,
+            max_steps: int = 5,
+            custom_prompt: Optional[str] = None
     ):
+        """
+        初始化 MyReActAgent
+
+        参数:
+            name: Agent 的名称
+            llm: HelloAgentsLLM 的实例，负责与大语言模型通信
+            tool_registry: ToolRegistry 的实例，用于管理和执行 Agent 可用的工具
+            system_prompt: 系统提示词，用于设定 Agent 的角色和行为准则
+            config: 配置对象，用于传递框架级的设置
+            max_steps: ReAct 循环的最大执行步数，防止无限循环
+            custom_prompt: 自定义的提示词模板，用于替换默认的 ReAct 提示词
+        """
         super().__init__(name, llm, system_prompt, config)
         self.tool_registry = tool_registry
         self.max_steps = max_steps
@@ -72,8 +85,29 @@ class MyReActAgent(ReActAgent):
                 history=history_str
             )
 
-            # 2. 调用LLM
+            """
+            构建发送给 LLM 的消息列表， messages 示例:
+            [{'content': '你是一个具备推理和行动能力的 AI 助手...
+
+            ## 可用工具
+            - calculate: 执行数学计算，支持基本的四则运算
+            - search: 搜索互联网信息
+
+            ## 工作流程
+            请严格按照以下格式进行回应...
+
+            ## 当前任务
+            **Question:** 请帮我计算：(25 + 15) * 3 - 8 的结果是多少？
+
+            ## 执行历史
+
+
+            现在开始你的推理和行动：
+            ', 'role': 'user'}]
+            """
             messages = [{"role": "user", "content": prompt}]
+
+            # 2. 调用LLM
             response_text = self.llm.invoke(messages, **kwargs)
 
             # 3. 解析输出
