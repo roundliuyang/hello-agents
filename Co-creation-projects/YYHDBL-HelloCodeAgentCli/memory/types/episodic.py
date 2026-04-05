@@ -20,19 +20,20 @@ from ..base import BaseMemory, MemoryItem, MemoryConfig
 from ..storage import SQLiteDocumentStore, QdrantVectorStore
 from ..embedding import get_text_embedder, get_dimension
 
+
 class Episode:
     """情景记忆中的单个情景"""
-    
+
     def __init__(
-        self,
-        episode_id: str,
-        user_id: str,
-        session_id: str,
-        timestamp: datetime,
-        content: str,
-        context: Dict[str, Any],
-        outcome: Optional[str] = None,
-        importance: float = 0.5
+            self,
+            episode_id: str,
+            user_id: str,
+            session_id: str,
+            timestamp: datetime,
+            content: str,
+            context: Dict[str, Any],
+            outcome: Optional[str] = None,
+            importance: float = 0.5
     ):
         self.episode_id = episode_id
         self.user_id = user_id
@@ -43,23 +44,24 @@ class Episode:
         self.outcome = outcome
         self.importance = importance
 
+
 class EpisodicMemory(BaseMemory):
     """情景记忆实现
     
     特点：
-    - 存储具体的交互事件
-    - 包含丰富的上下文信息
-    - 按时间序列组织
+    -SQLite+Qdrant混合存储架构
+    - 支持时间序列和会话级检索
+    - 结构化过滤 + 语义向量检索
     - 支持模式识别和回溯
     """
-    
+
     def __init__(self, config: MemoryConfig, storage_backend=None):
         super().__init__(config, storage_backend)
-        
+
         # 本地缓存（内存）
         self.episodes: List[Episode] = []
         self.sessions: Dict[str, List[str]] = {}  # session_id -> episode_ids
-        
+
         # 模式识别缓存
         self.patterns_cache = {}
         self.last_pattern_analysis = None
@@ -98,7 +100,7 @@ class EpisodicMemory(BaseMemory):
                 )
             except Exception:
                 self.vector_store = None
-    
+
     def add(self, memory_item: MemoryItem) -> str:
         """添加情景记忆"""
         # 从元数据中提取情景信息
@@ -107,8 +109,8 @@ class EpisodicMemory(BaseMemory):
         outcome = memory_item.metadata.get("outcome")
         participants = memory_item.metadata.get("participants", [])
         tags = memory_item.metadata.get("tags", [])
-        
-        # 创建情景（内存缓存）
+
+        # 创建情景对象
         episode = Episode(
             episode_id=memory_item.id,
             user_id=memory_item.user_id,
@@ -120,10 +122,26 @@ class EpisodicMemory(BaseMemory):
             importance=memory_item.importance
         )
         self.episodes.append(episode)
+
+        # 更新会话索引
         if session_id not in self.sessions:
             self.sessions[session_id] = []
         self.sessions[session_id].append(episode.episode_id)
 
+        """
+        用户问: "之前说的Python异步怎么用?"
+
+        1. Qdrant 向量检索 → 找到语义相似的记忆
+           query_vector = embed("Python异步怎么用?")
+           返回: ep_001 (相似度0.85), ep_042 (相似度0.72)
+
+        2. SQLite 获取完整详情
+           SELECT * FROM memories WHERE memory_id='ep_001'
+           返回: 完整的context、outcome、participants等
+
+        3. 合并结果返回给Agent
+        总结: SQLite存"真相",Qdrant做"搜索",两者通过memory_id关联。
+        """
         # 1) 权威存储（SQLite）
         ts_int = int(memory_item.timestamp.timestamp())
         self.doc_store.add_memory(
@@ -164,7 +182,7 @@ class EpisodicMemory(BaseMemory):
             pass
 
         return memory_item.id
-    
+
     def retrieve(self, query: str, limit: int = 5, **kwargs) -> List[MemoryItem]:
         """检索情景记忆（SQLite 结构化检索 + 可选向量检索）"""
         user_id = kwargs.get("user_id")
@@ -261,12 +279,12 @@ class EpisodicMemory(BaseMemory):
             mem_id = meta.get("memory_id")
             if not mem_id or mem_id in seen:
                 continue
-            
+
             # 检查是否已遗忘
             episode = next((e for e in self.episodes if e.episode_id == mem_id), None)
             if episode and episode.context.get("forgotten", False):
                 continue  # 跳过已遗忘的记忆
-                
+
             if candidate_ids is not None and mem_id not in candidate_ids:
                 continue
             if session_id and meta.get("session_id") != session_id:
@@ -282,14 +300,14 @@ class EpisodicMemory(BaseMemory):
             age_days = max(0.0, (now_ts - int(doc["timestamp"])) / 86400.0)
             recency_score = 1.0 / (1.0 + age_days)
             imp = float(doc.get("importance", 0.5))
-            
+
             # 新评分算法：向量检索纯基于相似度，重要性作为加权因子
             # 基础相似度得分（不受重要性影响）
             base_relevance = vec_score * 0.8 + recency_score * 0.2
-            
+
             # 重要性作为乘法加权因子，范围 [0.8, 1.2]
             importance_weight = 0.8 + (imp * 0.4)
-            
+
             # 最终得分：相似度 * 重要性权重
             combined = base_relevance * importance_weight
 
@@ -339,13 +357,13 @@ class EpisodicMemory(BaseMemory):
 
         results.sort(key=lambda x: x[0], reverse=True)
         return [it for _, it in results[:limit]]
-    
+
     def update(
-        self,
-        memory_id: str,
-        content: str = None,
-        importance: float = None,
-        metadata: Dict[str, Any] = None
+            self,
+            memory_id: str,
+            content: str = None,
+            importance: float = None,
+            metadata: Dict[str, Any] = None
     ) -> bool:
         """更新情景记忆（SQLite为权威，Qdrant按需重嵌入）"""
         updated = False
@@ -395,7 +413,7 @@ class EpisodicMemory(BaseMemory):
                 pass
 
         return updated or doc_updated
-    
+
     def remove(self, memory_id: str) -> bool:
         """删除情景记忆（SQLite + Qdrant）"""
         removed = False
@@ -412,20 +430,20 @@ class EpisodicMemory(BaseMemory):
 
         # 权威库删除
         doc_deleted = self.doc_store.delete_memory(memory_id)
-        
+
         # 向量库删除
         if self.vector_store is not None:
             try:
                 self.vector_store.delete_memories([memory_id])
             except Exception:
                 pass
-        
+
         return removed or doc_deleted
-    
+
     def has_memory(self, memory_id: str) -> bool:
         """检查记忆是否存在"""
         return any(episode.episode_id == memory_id for episode in self.episodes)
-    
+
     def clear(self):
         """清空所有情景记忆（仅清理episodic，不影响其他类型）"""
         # 内存缓存
@@ -450,12 +468,12 @@ class EpisodicMemory(BaseMemory):
         """情景记忆遗忘机制（硬删除）"""
         forgotten_count = 0
         current_time = datetime.now()
-        
+
         to_remove = []  # 收集要删除的记忆ID
-        
+
         for episode in self.episodes:
             should_forget = False
-            
+
             if strategy == "importance_based":
                 # 基于重要性遗忘
                 if episode.importance < threshold:
@@ -472,16 +490,16 @@ class EpisodicMemory(BaseMemory):
                     excess_count = len(self.episodes) - self.config.max_capacity
                     if episode in sorted_episodes[:excess_count]:
                         should_forget = True
-            
+
             if should_forget:
                 to_remove.append(episode.episode_id)
-        
+
         # 执行硬删除
         for episode_id in to_remove:
             if self.remove(episode_id):
                 forgotten_count += 1
                 logger.info(f"情景记忆硬删除: {episode_id[:8]}... (策略: {strategy})")
-        
+
         return forgotten_count
 
     def get_all(self) -> List[MemoryItem]:
@@ -499,12 +517,12 @@ class EpisodicMemory(BaseMemory):
             )
             memory_items.append(memory_item)
         return memory_items
-    
+
     def get_stats(self) -> Dict[str, Any]:
         """获取情景记忆统计信息（合并SQLite与Qdrant）"""
         # 硬删除模式：所有episodes都是活跃的
         active_episodes = self.episodes
-        
+
         db_stats = self.doc_store.get_database_stats()
         try:
             vs_stats = self.vector_store.get_collection_stats()
@@ -515,52 +533,54 @@ class EpisodicMemory(BaseMemory):
             "forgotten_count": 0,  # 硬删除模式下已遗忘的记忆会被直接删除
             "total_count": len(self.episodes),  # 总记忆数量
             "sessions_count": len(self.sessions),
-            "avg_importance": sum(e.importance for e in active_episodes) / len(active_episodes) if active_episodes else 0.0,
+            "avg_importance": sum(e.importance for e in active_episodes) / len(
+                active_episodes) if active_episodes else 0.0,
             "time_span_days": self._calculate_time_span(),
             "memory_type": "episodic",
             "vector_store": vs_stats,
-            "document_store": {k: v for k, v in db_stats.items() if k.endswith("_count") or k in ["store_type", "db_path"]}
+            "document_store": {k: v for k, v in db_stats.items() if
+                               k.endswith("_count") or k in ["store_type", "db_path"]}
         }
-    
+
     def get_session_episodes(self, session_id: str) -> List[Episode]:
         """获取指定会话的所有情景"""
         if session_id not in self.sessions:
             return []
-        
+
         episode_ids = self.sessions[session_id]
         return [e for e in self.episodes if e.episode_id in episode_ids]
-    
+
     def find_patterns(self, user_id: str = None, min_frequency: int = 2) -> List[Dict[str, Any]]:
         """发现用户行为模式"""
         # 检查缓存
         cache_key = f"{user_id}_{min_frequency}"
-        if (cache_key in self.patterns_cache and 
-            self.last_pattern_analysis and 
-            (datetime.now() - self.last_pattern_analysis).hours < 1):
+        if (cache_key in self.patterns_cache and
+                self.last_pattern_analysis and
+                (datetime.now() - self.last_pattern_analysis).hours < 1):
             return self.patterns_cache[cache_key]
-        
+
         # 过滤情景
         episodes = [e for e in self.episodes if user_id is None or e.user_id == user_id]
-        
+
         # 简单的模式识别：基于内容关键词
         keyword_patterns = {}
         context_patterns = {}
-        
+
         for episode in episodes:
             # 提取关键词
             words = episode.content.lower().split()
             for word in words:
                 if len(word) > 3:  # 忽略短词
                     keyword_patterns[word] = keyword_patterns.get(word, 0) + 1
-            
+
             # 提取上下文模式
             for key, value in episode.context.items():
                 pattern_key = f"{key}:{value}"
                 context_patterns[pattern_key] = context_patterns.get(pattern_key, 0) + 1
-        
+
         # 筛选频繁模式
         patterns = []
-        
+
         for keyword, frequency in keyword_patterns.items():
             if frequency >= min_frequency:
                 patterns.append({
@@ -569,7 +589,7 @@ class EpisodicMemory(BaseMemory):
                     "frequency": frequency,
                     "confidence": frequency / len(episodes)
                 })
-        
+
         for context_pattern, frequency in context_patterns.items():
             if frequency >= min_frequency:
                 patterns.append({
@@ -578,21 +598,21 @@ class EpisodicMemory(BaseMemory):
                     "frequency": frequency,
                     "confidence": frequency / len(episodes)
                 })
-        
+
         # 按频率排序
         patterns.sort(key=lambda x: x["frequency"], reverse=True)
-        
+
         # 缓存结果
         self.patterns_cache[cache_key] = patterns
         self.last_pattern_analysis = datetime.now()
-        
+
         return patterns
-    
+
     def get_timeline(self, user_id: str = None, limit: int = 50) -> List[Dict[str, Any]]:
         """获取时间线视图"""
         episodes = [e for e in self.episodes if user_id is None or e.user_id == user_id]
         episodes.sort(key=lambda x: x.timestamp, reverse=True)
-        
+
         timeline = []
         for episode in episodes[:limit]:
             timeline.append({
@@ -603,41 +623,41 @@ class EpisodicMemory(BaseMemory):
                 "importance": episode.importance,
                 "outcome": episode.outcome
             })
-        
+
         return timeline
-    
+
     def _filter_episodes(
-        self,
-        user_id: str = None,
-        session_id: str = None,
-        time_range: Tuple[datetime, datetime] = None
+            self,
+            user_id: str = None,
+            session_id: str = None,
+            time_range: Tuple[datetime, datetime] = None
     ) -> List[Episode]:
         """过滤情景"""
         filtered = self.episodes
-        
+
         if user_id:
             filtered = [e for e in filtered if e.user_id == user_id]
-        
+
         if session_id:
             filtered = [e for e in filtered if e.session_id == session_id]
-        
+
         if time_range:
             start_time, end_time = time_range
             filtered = [e for e in filtered if start_time <= e.timestamp <= end_time]
-        
+
         return filtered
-    
+
     def _calculate_time_span(self) -> float:
         """计算记忆时间跨度（天）"""
         if not self.episodes:
             return 0.0
-        
+
         timestamps = [e.timestamp for e in self.episodes]
         min_time = min(timestamps)
         max_time = max(timestamps)
-        
+
         return (max_time - min_time).days
-    
+
     def _persist_episode(self, episode: Episode):
         """持久化情景到存储后端"""
         if self.storage and hasattr(self.storage, 'add_memory'):
@@ -654,7 +674,7 @@ class EpisodicMemory(BaseMemory):
                     "outcome": episode.outcome
                 }
             )
-    
+
     def _remove_from_storage(self, memory_id: str):
         """从存储后端删除"""
         if self.storage and hasattr(self.storage, 'delete_memory'):
