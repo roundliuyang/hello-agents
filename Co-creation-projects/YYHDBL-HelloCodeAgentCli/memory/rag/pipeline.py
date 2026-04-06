@@ -50,6 +50,13 @@ def _convert_to_markdown(path: str) -> str:
     """
     Universal document reader using MarkItDown with enhanced PDF processing.
     Converts any supported file format to markdown text.
+
+    支持格式：
+    - 文档：PDF、Word、Excel、PowerPoint
+    - 图像：JPG、PNG、GIF（通过OCR）
+    - 音频：MP3、WAV、M4A（通过转录）
+    - 文本：TXT、CSV、JSON、XML、HTML
+    - 代码：Python、JavaScript、Java等
     """
     if not os.path.exists(path):
         return ""
@@ -59,7 +66,7 @@ def _convert_to_markdown(path: str) -> str:
     if ext == '.pdf':
         return _enhanced_pdf_processing(path)
     
-    # 其他格式使用原有MarkItDown
+    # 其他格式使用原有MarkItDown统一转换
     md_instance = _get_markitdown_instance()
     if md_instance is None:
         return _fallback_text_reader(path)
@@ -225,6 +232,7 @@ def _approx_token_len(text: str) -> int:
 
 
 def _split_paragraphs_with_headings(text: str) -> List[Dict]:
+    """根据标题层次分割段落，保持语义完整性"""
     lines = text.splitlines()
     heading_stack: List[str] = []
     paragraphs: List[Dict] = []
@@ -245,7 +253,7 @@ def _split_paragraphs_with_headings(text: str) -> List[Dict]:
     for ln in lines:
         raw = ln
         if raw.strip().startswith("#"):
-            # heading line
+            # 处理标题行
             flush_buf(char_pos)
             level = len(raw) - len(raw.lstrip('#'))
             title = raw.lstrip('#').strip()
@@ -256,7 +264,7 @@ def _split_paragraphs_with_headings(text: str) -> List[Dict]:
             heading_stack.append(title)
             char_pos += len(raw) + 1
             continue
-        # paragraph accumulation
+        # 段落内容累积
         if raw.strip() == "":
             flush_buf(char_pos)
             buf = []
@@ -270,6 +278,48 @@ def _split_paragraphs_with_headings(text: str) -> List[Dict]:
 
 
 def _chunk_paragraphs(paragraphs: List[Dict], chunk_tokens: int, overlap_tokens: int) -> List[Dict]:
+    """基于Token数量的智能分块
+
+    功能说明：
+    将段落列表按照Token数量限制进行智能分块，保持语义完整性并支持重叠策略。
+
+    参数：
+        paragraphs: 段落列表，每个元素包含 {"content": str, "start": int, "end": int, "heading_path": str}
+        chunk_tokens: 每个分块的最大Token数（如800）
+        overlap_tokens: 相邻分块之间的重叠Token数（如100），用于保持上下文连贯性
+
+    返回：
+        分块列表，每个元素包含合并后的内容和元数据
+
+    示例：
+        # 输入3个段落
+        paragraphs = [
+            {"content": "Python是一种编程语言", "start": 0, "end": 20, "heading_path": None},
+            {"content": "它由Guido van Rossum创建", "start": 21, "end": 50, "heading_path": None},
+            {"content": "广泛应用于AI领域", "start": 51, "end": 70, "heading_path": None}
+        ]
+
+        # 假设每段约10个token，设置chunk_tokens=25, overlap_tokens=10
+        chunks = _chunk_paragraphs(paragraphs, chunk_tokens=25, overlap_tokens=10)
+
+        # 输出2个分块（第1、2段合并，第2、3段因重叠保留部分）
+        chunks = [
+            {
+                "content": "Python是一种编程语言\\n\\n它由Guido van Rossum创建",
+                "start": 0,
+                "end": 50,
+                "heading_path": None
+            },
+            {
+                "content": "它由Guido van Rossum创建\\n\\n广泛应用于AI领域",
+                "start": 21,
+                "end": 70,
+                "heading_path": None
+            }
+        ]
+
+        # 注意：第2个分块包含了第1个分块的尾部（重叠10 tokens），保证检索时上下文不丢失
+    """
     chunks: List[Dict] = []
     cur: List[Dict] = []
     cur_tokens = 0
@@ -492,7 +542,7 @@ def index_chunks(
         print("[RAG] No chunks to index")
         return
     
-    # Use unified embedding from embedding module
+    # 使用统一嵌入模型
     embedder = get_text_embedder()
     dimension = get_dimension(384)
     
@@ -710,6 +760,7 @@ def search_vectors(
 
 
 def _prompt_mqe(query: str, n: int) -> List[str]:
+    """使用LLM生成多样化的查询扩展"""
     try:
         from core.llm import HelloAgentsLLM
         llm = HelloAgentsLLM()

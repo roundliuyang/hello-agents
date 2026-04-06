@@ -217,7 +217,22 @@ class SemanticMemory(BaseMemory):
             self.nlp_models = {}
 
     def add(self, memory_item: MemoryItem) -> str:
-        """添加语义记忆"""
+        """
+        添加语义记忆
+        用户问: "张三会什么技术?"
+
+        1. Qdrant 向量检索 → 找到包含"张三"的记忆
+           query: "张三 技能"
+           返回: sem_001 (相似度0.88)
+
+        2. Neo4j 图查询 → 提取具体技能关系
+           Cypher: MATCH (:Entity {name:"张三"})-[:SKILLED_IN]->(skill)
+                   RETURN skill.name
+           返回: ["Python", "机器学习", "数据分析"]
+
+        3. Agent 整合回答:
+           "根据记忆，张三会以下技术: Python、机器学习、数据分析"
+        """
         try:
             # 1. 生成文本嵌入
             embedding = self.embedding_model.encode(memory_item.content)
