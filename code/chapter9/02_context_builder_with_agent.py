@@ -6,6 +6,8 @@ ContextBuilder 与 Agent 集成示例
 2. 自动构建优化的上下文
 3. 记忆管理与上下文构建的协同
 """
+import os
+
 from dotenv import load_dotenv
 load_dotenv()
 from hello_agents import SimpleAgent, HelloAgentsLLM, ToolRegistry
@@ -22,14 +24,14 @@ class ContextAwareAgent(SimpleAgent):
         super().__init__(name=name, llm=llm, **kwargs)
 
         
-        #（Optional）
-        # self.memory_tool = MemoryTool(user_id=kwargs.get("user_id", "default")) 
-        # self.rag_tool = RAGTool(knowledge_base_path=kwargs.get("knowledge_base_path", "./kb"))
+        #（Optional），记得是可选的哟
+        self.memory_tool = MemoryTool(user_id=kwargs.get("user_id", "default"))
+        self.rag_tool = RAGTool(knowledge_base_path=kwargs.get("knowledge_base_path", "./kb"))
 
         # 初始化上下文构建器
         self.context_builder = ContextBuilder(
-            # memory_tool=self.memory_tool,
-            # rag_tool=self.rag_tool,
+            memory_tool=self.memory_tool,
+            rag_tool=self.rag_tool,
             config=ContextConfig(max_tokens=4000)
         )
 
@@ -61,12 +63,12 @@ class ContextAwareAgent(SimpleAgent):
         )
 
         # 4. 将重要交互记录到记忆系统
-        # self.memory_tool.run({
-        #     "action": "add",
-        #     "content": f"Q: {user_input}\nA: {response[:200]}...",  # 摘要
-        #     "memory_type": "episodic",
-        #     "importance": 0.6
-        # })
+        self.memory_tool.run({
+            "action": "add",
+            "content": f"Q: {user_input}\nA: {response[:200]}...",  # 摘要
+            "memory_type": "episodic",
+            "importance": 0.6
+        })
 
         return response
 
@@ -78,7 +80,11 @@ def main():
 
     # 配置 LLM
     from hello_agents.core.llm import HelloAgentsLLM
-    llm = HelloAgentsLLM()
+    llm = HelloAgentsLLM(
+        provider="modelscope",
+        model="Qwen/Qwen3.5-35B-A3B",  # ModelScope 完整路径
+        api_key=os.getenv("MODELSCOPE_API_KEY")
+    )
 
     # 使用示例
     agent = ContextAwareAgent(

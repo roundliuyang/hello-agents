@@ -29,14 +29,14 @@ class ProjectAssistant(SimpleAgent):
         self.project_name = project_name
 
         # 初始化工具
-        # self.memory_tool = MemoryTool(user_id=project_name)
-        # self.rag_tool = RAGTool(knowledge_base_path=f"./{project_name}_kb")
+        self.memory_tool = MemoryTool(user_id=project_name)
+        self.rag_tool = RAGTool(knowledge_base_path=f"./{project_name}_kb")
         self.note_tool = NoteTool(workspace=f"./{project_name}_notes")
 
         # 初始化上下文构建器
         self.context_builder = ContextBuilder(
-            # memory_tool=self.memory_tool,
-            # rag_tool=self.rag_tool,
+            memory_tool=self.memory_tool,
+            rag_tool=self.rag_tool,
             config=ContextConfig(max_tokens=4000)
         )
 

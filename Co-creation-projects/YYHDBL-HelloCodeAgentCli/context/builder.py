@@ -356,7 +356,15 @@ class ContextBuilder:
         packets: List[ContextPacket],
         user_query: str
     ) -> List[ContextPacket]:
-        """Select: 基于分数与预算的筛选"""
+        """选择最相关的信息包
+
+        Args:
+            packets: 候选信息包列表
+            user_query: 用户查询(用于计算相关性)
+
+        Returns:
+            List[ContextPacket]: 选中的信息包列表
+        """
         # 1) 计算相关性（关键词重叠）
         query_tokens = set(user_query.lower().split())
         for packet in packets:
@@ -415,7 +423,17 @@ class ContextBuilder:
         user_query: str,
         system_instructions: Optional[str]
     ) -> str:
-        """Structure: 组织成结构化上下文模板"""
+        """将选中的信息包组织成结构化的上下文模板
+
+        Args:
+            selected_packets: 选中的信息包列表
+            user_query: 用户查询
+
+        Returns:
+            str: 结构化的上下文字符串
+        """
+
+        # 构建结构化模板
         sections = []
         
         # [Role & Policies] - 系统指令
@@ -466,7 +484,15 @@ class ContextBuilder:
         return "\n\n".join(sections)
     
     def _compress(self, context: str) -> str:
-        """Compress: 压缩与规范化"""
+        """压缩超限的上下文
+
+        Args:
+            context: 原始上下文
+            # max_tokens: 最大 token 限制
+
+        Returns:
+            str: 压缩后的上下文
+        """
         if not self.config.enable_compression:
             return context
         
@@ -474,7 +500,7 @@ class ContextBuilder:
         available_tokens = self.config.get_available_tokens()
         
         if current_tokens <= available_tokens:
-            return context
+            return context    # 无需压缩
 
         # LLM 压缩（更保真）：仅在提供 llm 时启用
         if self.llm is not None:

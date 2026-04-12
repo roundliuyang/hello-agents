@@ -7,6 +7,8 @@ ContextBuilder 基础使用示例
 3. 添加记忆
 4. 构建结构化上下文
 """
+import os
+
 from dotenv import load_dotenv
 load_dotenv()
 from hello_agents.context import ContextBuilder, ContextConfig
@@ -22,8 +24,8 @@ def main():
 
     # 1. 初始化工具（Optional）
     print("1. 初始化工具...")
-    # memory_tool = MemoryTool(user_id="user123")
-    # rag_tool = RAGTool(knowledge_base_path="./knowledge_base")
+    memory_tool = MemoryTool(user_id="user123")
+    rag_tool = RAGTool(knowledge_base_path="./knowledge_base")
 
     # 2. 创建 ContextBuilder
     print("2. 创建 ContextBuilder...")
@@ -35,8 +37,8 @@ def main():
     )
 
     builder = ContextBuilder(
-        # memory_tool=memory_tool,
-        # rag_tool=rag_tool,
+        memory_tool=memory_tool,
+        rag_tool=rag_tool,
         config=config
     )
 
@@ -51,19 +53,19 @@ def main():
 
     # 4. 添加一些记忆
     print("4. 添加记忆...")
-    # memory_tool.run({
-    #     "action": "add",
-    #     "content": "用户正在开发数据分析工具,使用Python和Pandas",
-    #     "memory_type": "semantic",
-    #     "importance": 0.8
-    # })
+    memory_tool.run({
+        "action": "add",
+        "content": "用户正在开发数据分析工具,使用Python和Pandas",
+        "memory_type": "semantic",
+        "importance": 0.8
+    })
 
-    # memory_tool.run({
-    #     "action": "add",
-    #     "content": "已完成CSV读取模块的开发",
-    #     "memory_type": "episodic",
-    #     "importance": 0.7
-    # })
+    memory_tool.run({
+        "action": "add",
+        "content": "已完成CSV读取模块的开发",
+        "memory_type": "episodic",
+        "importance": 0.7
+    })
 
     # 5. 构建上下文
     print("5. 构建上下文...\n")
@@ -89,7 +91,11 @@ def main():
     ]
 
     from hello_agents.core.llm import HelloAgentsLLM
-    llm = HelloAgentsLLM()
+    llm = HelloAgentsLLM(
+        provider="modelscope",
+        model="Qwen/Qwen3.5-35B-A3B",  # ModelScope 完整路径
+        api_key=os.getenv("MODELSCOPE_API_KEY")
+    )
     # 注意: 实际使用时需要配置 LLM
     response = llm.invoke(messages)
     print(f"LLM 回答: {response}")
