@@ -26,7 +26,15 @@ else:
 
 @dataclass
 class ContextPacket:
-    """上下文信息包"""
+    """候选信息包
+
+    Attributes:
+        content: 信息内容
+        timestamp: 时间戳
+        token_count: Token 数量
+        relevance_score: 相关性分数(0.0-1.0)
+        metadata: 可选的元数据
+    """
     content: str
     timestamp: datetime = field(default_factory=datetime.now)
     metadata: Dict[str, Any] = field(default_factory=dict)
@@ -41,15 +49,22 @@ class ContextPacket:
 
 @dataclass
 class ContextConfig:
-    """上下文构建配置"""
-    max_tokens: int = 8000  # 总预算
-    reserve_ratio: float = 0.15  # 生成余量（10-20%）
-    min_relevance: float = 0.3  # 最小相关性阈值（仅对扩展上下文生效）
+    """上下文构建配置
+
+    Attributes:
+        max_tokens: 最大 token 数量
+        reserve_ratio: 为系统指令预留的比例(0.0-1.0)
+        min_relevance: 最低相关性阈值
+        enable_compression: 是否启用压缩
+    """
+    max_tokens: int = 8000  # 最大 token 数量
+    reserve_ratio: float = 0.15  # 为系统指令预留的比例(0.0-1.0)
+    min_relevance: float = 0.3  # 最低相关性阈值
     max_history_turns: int = 10  # 最大保留对话轮数
     enable_mmr: bool = True  # 启用最大边际相关性（多样性）
     mmr_lambda: float = 0.7  # MMR平衡参数（0=纯多样性, 1=纯相关性）
     system_prompt_template: str = ""  # 系统提示模板
-    enable_compression: bool = True  # 启用压缩
+    enable_compression: bool = True  # 是否启用压缩
     include_output_format: bool = True  # 是否附加固定输出格式约束
     # 按需探索模式：不主动查询 memory/rag，由模型通过工具按需获取
     lazy_fetch: bool = True
@@ -252,10 +267,15 @@ class ContextBuilder:
         system_instructions: Optional[str],
         additional_packets: List[ContextPacket]
     ) -> List[ContextPacket]:
-        """Gather: 收集候选信息
-        
-        当 lazy_fetch=True 时，只收集保底上下文（系统指令+对话历史+额外包）。
-        当 lazy_fetch=False 时，主动查询 memory/rag（传统模式）。
+        """汇集所有候选信息
+
+        Args:
+            user_query: 用户查询
+            conversation_history: 对话历史
+            system_instructions: 系统指令
+
+        Returns:
+            List[ContextPacket]: 候选信息列表
         """
         packets = []
         
