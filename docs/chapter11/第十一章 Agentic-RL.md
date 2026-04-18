@@ -35,10 +35,9 @@ duck egg. How much in dollars does she make every day at the farmers' market?
 
 在深入 Agentic RL 之前，我们需要先理解 LLM 训练的完整流程。一个强大的 LLM(如 GPT、Claude、Qwen)的诞生，通常要经历两个主要阶段:预训练(Pretraining)和后训练(Post-training)。如图 11.1 所示，这两个阶段构成了 LLM 从"语言模型"到"对话助手"的完整演化路径。
 
-<div align="center">
-  <img src="https://raw.githubusercontent.com/datawhalechina/Hello-Agents/main/docs/images/11-figures/11-1.png" alt="" width="85%"/>
-  <p>图 11.1 LLM 训练全景图</p>
-</div>
+![img](第十一章 Agentic-RL.assets/11-1.png)
+
+​																										*图 11.1 LLM 训练全景图*
 
 <strong>预训练阶段</strong>是 LLM 训练的第一阶段，目标是让模型学习语言的基本规律和世界知识。这个阶段使用海量的文本数据(通常是数 TB 级别)，通过自监督学习的方式训练模型。最常见的预训练任务是因果语言建模(Causal Language Modeling)，也称为下一个词预测(Next Token Prediction)。
 
@@ -90,12 +89,12 @@ $$
 
 可以看到，Agentic RL 的关键特征是多步交互、每一步的行动都会改变环境状态、每一步都可以获得反馈、优化整个任务的完成质量。
 
-强化学习是基于马尔可夫决策过程(Markov Decision Process， MDP)框架进行形式化的。MDP 由五元组 $(S, A, P, R, \gamma)$ 定义:状态空间$S$、行动空间$A$、状态转移函数$P(s'|s,a)$、奖励函数$R(s,a)$、折扣因子$\gamma$。让我们从 MDP 的角度对比 PBRFT 和 Agentic RL，如表 11.1 所示。
+强化学习是基于马尔可夫决策过程(Markov Decision Process， MDP)框架进行形式化的。MDP 由五元组 $(S, A, P, R, \gamma)$ 定义:状态空间$S$、行动空间$A$、状态转移函数$P(s'|s,a)$、奖励函数$R(s,a)$、折扣因子$\gamma$​。让我们从 MDP 的角度对比 PBRFT 和 Agentic RL，如表 11.1 所示。
 
-<div align="center">
-  <p>表 11.1 PBRFT 与 Agentic RL 对比</p>
-  <img src="https://raw.githubusercontent.com/datawhalechina/Hello-Agents/main/docs/images/11-figures/11-table-1.png" alt="" width="85%"/>
-</div>
+![img](第十一章 Agentic-RL.assets/11-table-1.png)
+
+​																								*表 11.1 PBRFT 与 Agentic RL 对比*
+
 
 在状态方面，PBRFT 的状态 $s_0$ 仅由用户提示构成，时间跨度 $T=1$(单步)，状态不变化，可以表示为 $s_0 = \text{prompt}$。而 Agentic RL 的状态 $s_t$ 包含历史观察和上下文，时间跨度 $T \gg 1$(多步)，状态随行动演化，可以表示为 $s_t = (\text{prompt}, o_1, o_2, ..., o_t)$，其中 $o_t$ 是第 $t$ 步的观察(如工具返回结果、环境反馈等)。
 
@@ -129,10 +128,9 @@ $$
 
 Agentic RL 的目标是赋予 LLM 智能体六大核心能力，如图 11.2 所示。
 
-<div align="center">
-  <img src="https://raw.githubusercontent.com/datawhalechina/Hello-Agents/main/docs/images/11-figures/11-2.png" alt="" width="85%"/>
-  <p>图 11.2 Agentic RL 的六大核心能力</p>
-</div>
+![img](第十一章 Agentic-RL.assets/11-2.png)
+
+​																						*图 11.2 Agentic RL 的六大核心能力*
 
 <strong>推理(Reasoning)</strong>是指从给定信息中逻辑地得出结论的过程，是智能体的核心能力。传统的 CoT 提示方法依赖少样本示例，泛化能力有限;SFT 只能模仿训练数据中的推理模式，难以创新。强化学习的优势在于通过试错学习有效的推理策略，发现训练数据中没有的推理路径，学会何时需要深度思考、何时可以快速回答。推理任务可以建模为序列决策问题，给定问题 $q$，智能体需要生成推理链 $c = (c_1, c_2, ..., c_n)$ 和最终答案 $a$。奖励函数通常设计为 $r(q, c, a) = 1$ if $a = a^*$ else $0$，训练目标是 $\max_\theta \mathbb{E}_{q, (c,a) \sim \pi_\theta} [r(q, c, a)]$。通过这种方式，模型学会生成高质量的推理链，而不仅仅是记忆答案。
 
@@ -154,12 +152,12 @@ Agentic RL 的目标是赋予 LLM 智能体六大核心能力，如图 11.2 所�
 
 HelloAgents 的 Agentic RL 模块采用四层架构设计，如图 11.3 所示。
 
-<div align="center">
-  <img src="https://raw.githubusercontent.com/datawhalechina/Hello-Agents/main/docs/images/11-figures/11-3.png" alt="" width="85%"/>
-  <p>图 11.3 HelloAgents Agentic RL 架构</p>
-</div>
+![img](第十一章 Agentic-RL.assets/11-3.png)
 
-最底层是<strong>数据集层</strong>，包含<code>GSM8KDataset</code>类、<code>create_sft_dataset()</code>函数和<code>create_rl_dataset()</code>函数，负责数据加载和格式转换。第二层是<strong>奖励函数层</strong>，包含<code>MathRewardFunction</code>基类、<code>AccuracyReward</code>准确率奖励、<code>LengthPenaltyReward</code>长度惩罚、<code>StepReward</code>步骤奖励，以及便捷创建函数<code>create_*_reward()</code>，负责定义什么是好的行为。第三层是<strong>训练器层</strong>，包含<code>SFTTrainerWrapper</code>和<code>GRPOTrainerWrapper</code>，负责具体的训练逻辑和 LoRA 支持。最顶层是<strong>统一接口层</strong>，提供<code>RLTrainingTool</code>统一训练工具，支持四种操作:<code>action="train"</code>(训练模型)、<code>action="load_dataset"</code>(加载数据集)、<code>action="create_reward"</code>(创建奖励函数)、<code>action="evaluate"</code>(评估模型)。
+​																							*图 11.3 HelloAgents Agentic RL 架构*
+
+
+最底层是<strong>数据集层</strong>，包含<code>GSM8KDaStaset</code>类、<code>create_sft_dataset()</code>函数和<code>create_rl_dataset()</code>函数，负责数据加载和格式转换。第二层是<strong>奖励函数层</strong>，包含<code>MathRewardFunction</code>基类、<code>AccuracyReward</code>准确率奖励、<code>LengthPenaltyReward</code>长度惩罚、<code>StepReward</code>步骤奖励，以及便捷创建函数<code>create_*_reward()</code>，负责定义什么是好的行为。第三层是<strong>训练器层</strong>，包含<code>SFTTrainerWrapper</code>和<code>GRPOTrainerWrapper</code>，负责具体的训练逻辑和 LoRA 支持。最顶层是<strong>统一接口层</strong>，提供<code>RLTrainingTool</code>统一训练工具，支持四种操作:<code>action="train"</code>(训练模型)、<code>action="load_dataset"</code>(加载数据集)、<code>action="create_reward"</code>(创建奖励函数)、<code>action="evaluate"</code>(评估模型)。
 
 ### 11.1.5 快速上手示例
 
