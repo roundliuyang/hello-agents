@@ -247,10 +247,9 @@ print(f"  GRPO模型: {grpo_result['output_dir']}")
 
 GSM8K(Grade School Math 8K)<sup>[4]</sup>是一个高质量的小学数学应用题数据集。如表 11.2 所示，数据集包含 7，473 个训练样本和 1，319 个测试样本，难度为小学数学水平(2-8 年级)，题型为应用题，需要 2-8 步推理才能得出答案。
 
-<div align="center">
-  <p>表 11.2 GSM8K 数据集统计</p>
-  <img src="https://raw.githubusercontent.com/datawhalechina/Hello-Agents/main/docs/images/11-figures/11-table-2.png" alt="" width="85%"/>
-</div>
+![img](第十一章 Agentic-RL.assets/11-table-2.png)
+																						*表 11.2 GSM8K 数据集统计*
+
 让我们看一个典型的 GSM8K 问题:
 
 ```
@@ -269,13 +268,10 @@ GSM8K(Grade School Math 8K)<sup>[4]</sup>是一个高质量的小学数学应用
 
 GSM8K 数据集需要转换为不同的格式，以适应不同的训练方法，如图 11.4 所示。
 
-<div align="center">
-  <img src="https://raw.githubusercontent.com/datawhalechina/Hello-Agents/main/docs/images/11-figures/11-4.png" alt="" width="85%"/>
-  <p>图 11.4 GSM8K 数据格式转换</p>
-</div>
+![img](第十一章 Agentic-RL.assets/11-4.png)
+																									*图 11.4 GSM8K 数据格式转换*
 
-
-原始格式直接来自数据集，包含问题(question)和答案(answer，含解题步骤)，适合人类阅读。SFT 格式用于监督微调，将问题转换为对话格式的 prompt，将完整解答作为 completion。例如:
+**原始格式**直接来自数据集，包含问题(question)和答案(answer，含解题步骤)，适合人类阅读。SFT 格式用于监督微调，将问题转换为对话格式的 prompt，将完整解答作为 completion。例如:
 
 ```python
 {
@@ -299,10 +295,9 @@ RL 格式用于强化学习，只提供问题和正确答案，不提供解题�
 
 如表 11.3 所示，三种格式各有用途。
 
-<div align="center">
-  <p>表 11.3 数据格式对比</p>
-  <img src="https://raw.githubusercontent.com/datawhalechina/Hello-Agents/main/docs/images/11-figures/11-table-3.png" alt="" width="85%"/>
-</div>
+![img](第十一章 Agentic-RL.assets/11-table-3.png)
+																										*表 11.3 数据格式对比*
+
 HelloAgents 提供了便捷的数据集加载函数。让我们通过代码来加载和查看数据集:
 
 ```python
@@ -360,11 +355,9 @@ $$
 奖励函数的设计直接影响训练效果。好的奖励函数应该能清楚地定义什么是成功、能够提供梯度信号、不会产生过大的方差、容易调整和组合。糟糕的奖励函数可能只在任务结束时给奖励，中间步骤无反馈、存在奖励欺骗，使得智能体找到"作弊"方式获得高奖励、多个目标相互矛盾、方差过大，训练不收敛。
 
 HelloAgents 提供了三种内置奖励函数，可以单独使用或组合使用，如图 11.5 所示。
+![img](第十一章 Agentic-RL.assets/11-5.png)
+																										*图 11.5 奖励函数设计*
 
-<div align="center">
-  <img src="https://raw.githubusercontent.com/datawhalechina/Hello-Agents/main/docs/images/11-figures/11-5.png" alt="" width="85%"/>
-  <p>图 11.5 奖励函数设计</p>
-</div>
 <strong>（1）准确率奖励</strong>
 
 准确率奖励(AccuracyReward)是最基础的奖励函数，它只关心答案是否正确。数学定义为:
@@ -914,10 +907,11 @@ Final Answer: 72<|im_end|>
 
 如图 11.6 所示，SFT 是从预训练模型到强化学习的桥梁。
 
-<div align="center">
-  <img src="https://raw.githubusercontent.com/datawhalechina/Hello-Agents/main/docs/images/11-figures/11-6.png" alt="" width="85%"/>
-  <p>图 11.6 SFT 在训练流程中的作用</p>
-</div>
+​	![img](第十一章 Agentic-RL.assets/11-6.png)
+​																									*图 11.6 SFT 在训练流程中的作用*
+
+
+
 
 ### 11.3.2 LoRA:参数高效微调
 
@@ -946,11 +940,9 @@ $$
 因此可以总结 LoRA 的优势:显存占用大幅降低、训练速度更快、易于部署、防止过拟合。不过训练的效果通常情况会比全量调参更差一些。
 
 如表 11.5 所示，LoRA 在不同模型规模下的效果对比。
+![img](第十一章 Agentic-RL.assets/11-table-5.png)
+																								*表 11.5 LoRA vs 全量微调对比*
 
-<div align="center">
-  <p>表 11.5 LoRA vs 全量微调对比</p>
-  <img src="https://raw.githubusercontent.com/datawhalechina/Hello-Agents/main/docs/images/11-figures/11-table-5.png" alt="" width="85%"/>
-</div>
 
 LoRA 的关键超参数包括:秩(rank，r)，控制 LoRA 矩阵的秩，越大表达能力越强，但参数量也越多，典型值为 4-64，默认 8;Alpha($\alpha$)，LoRA 的缩放因子，实际更新为 $\Delta W = \frac{\alpha}{r} BA$，控制 LoRA 的影响强度，典型值等于 rank;目标模块(target_modules)，指定哪些层应用 LoRA，通常选择注意力层(q_proj， k_proj， v_proj， o_proj)，也可以包括 MLP 层(gate_proj， up_proj， down_proj)。
 
@@ -1172,20 +1164,15 @@ $$
 
 如图 11.7 所示，PPO 和 GRPO 的训练流程对比。
 
-<div align="center">
-  <img src="https://raw.githubusercontent.com/datawhalechina/Hello-Agents/main/docs/images/11-figures/11-7.png" alt="" width="85%"/>
-  <p>图 11.7 PPO vs GRPO 训练流程</p>
-</div>
+![img](第十一章 Agentic-RL.assets/11-7.png)
+																								*图 11.7 PPO vs GRPO 训练流程*
+
 
 可以看到，GRPO 省去了 Value Model 的训练，大大简化了流程。
 
 如表 11.6 所示，PPO 和 GRPO 的详细对比。
-
-<div align="center">
-  <p>表 11.6 PPO vs GRPO 对比</p>
-  <img src="https://raw.githubusercontent.com/datawhalechina/Hello-Agents/main/docs/images/11-figures/11-table-6.png" alt="" width="85%"/>
-</div>
-
+![img](第十一章 Agentic-RL.assets/11-table-6.png)
+																								*表 11.6 PPO vs GRPO 对比*
 
 
 对于 LLM 训练，GRPO 是更好的选择，因为它更简单、更稳定、显存占用更低。
@@ -1560,12 +1547,8 @@ $$
 <strong>可解释性(Explainability)</strong>:答案是否容易理解和验证。包含清晰步骤的答案比直接给出结果的答案更具可解释性。
 
 如表 11.7 所示，不同指标的对比。
-
-<div align="center">
-  <p>表 11.7 评估指标对比</p>
-  <img src="https://raw.githubusercontent.com/datawhalechina/Hello-Agents/main/docs/images/11-figures/11-table-7.png" alt="" width="85%"/>
-</div>
-
+![img](第十一章 Agentic-RL.assets/11-table-7.png)
+																									*表 11.7 评估指标对比*
 
 ### 11.5.2 评估实战
 
@@ -1748,11 +1731,9 @@ for group_name, results in step_groups.items():
 ### 11.5.4 改进方向
 
 基于评估和分析结果，我们可以确定模型的改进方向，如图 11.8 所示。
+![img](第十一章 Agentic-RL.assets/11-8.png)
+																						*图 11.8 模型改进迭代流程*
 
-<div align="center">
-  <img src="https://raw.githubusercontent.com/datawhalechina/Hello-Agents/main/docs/images/11-figures/11-8.png" alt="" width="85%"/>
-  <p>图 11.8 模型改进迭代流程</p>
-</div>
 
 这是一个持续迭代的过程:训练模型 → 评估性能 → 分析错误 → 确定问题 → 选择改进方向 → 重新训练。通过多次迭代，模型性能会不断提升。
 
@@ -1764,10 +1745,9 @@ for group_name, results in step_groups.items():
 
 一个完整的 Agentic RL 训练流程包括以下阶段:数据准备、SFT 训练、SFT 评估、GRPO 训练、GRPO 评估、模型部署。如图 11.9 所示。
 
-<div align="center">
-  <img src="https://raw.githubusercontent.com/datawhalechina/Hello-Agents/main/docs/images/11-figures/11-9.png" alt="" width="85%"/>
-  <p>图 11.9 端到端训练流程</p>
-</div>
+![img](第十一章 Agentic-RL.assets/11-9.png)
+																								*图 11.9 端到端训练流程*
+
 
 让我们通过一个完整的脚本来实现这个流程:
 
@@ -2201,10 +2181,9 @@ print(f"最佳准确率: {study.best_value:.2%}")
 
 如表 11.8 所示，不同调优方法的对比。
 
-<div align="center">
-  <p>表 11.8 超参数调优方法对比</p>
-  <img src="https://raw.githubusercontent.com/datawhalechina/Hello-Agents/main/docs/images/11-figures/11-table-8.png" alt="" width="85%"/>
-</div>
+![img](第十一章 Agentic-RL.assets/11-table-8.png)
+																				*表 11.8 超参数调优方法对比*
+
 ### 11.6.3 分布式训练
 
 当数据量和模型规模增大时，单 GPU 训练会变得非常缓慢。这时我们需要使用分布式训练来加速训练过程。HelloAgents 基于 TRL 和 Hugging Face Accelerate，天然支持多 GPU 和多节点分布式训练
